@@ -32,6 +32,7 @@ class GameGrid(Frame):
         self.grid_cells = []
         self.init_grid()
         self.init_matrix()
+        #self.matrix = [[32,8,4,2],[128,32,8,4],[512,128,32,8],[2048,512,128,32]]
         self.update_grid_cells()
 
         self.after(self.intervalTime, self.AI_Expectimax)
