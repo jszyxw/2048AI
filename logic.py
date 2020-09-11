@@ -61,7 +61,7 @@ def add_two(mat):
 def game_state(mat):
     for i in range(len(mat)):
         for j in range(len(mat[0])):
-            if mat[i][j] == 2048:
+            if mat[i][j] == 65536:
                 return 'win'
     for i in range(len(mat)-1):
         # intentionally reduced to check the row on the right and below
@@ -214,4 +214,14 @@ def calcSpace(mat):
             if mat[i][j] == 0:
                 totSpace += 1
     return totSpace
+
+def calcScore(mat):
+    score = 0
+    Log = {1:0, 2:1, 4:2, 8:3, 16:4, 32:5, 64:6, 128:7, 256:8, 512:9, 1024:10, 2048:11, 4096:12, 8192:13, 16384:14, 32768:15, 65536:16}
+    for i in range(c.GRID_LEN):
+        for j in range(c.GRID_LEN):
+            if mat[i][j] != 0:
+                score += mat[i][j] * (Log[mat[i][j]] - 1)
+    return score
+
 

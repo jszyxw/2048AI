@@ -1,6 +1,8 @@
 import random
 import time
 import copy
+import AI
+import AI_best
 from tkinter import Frame, Label, CENTER
 
 import logic
@@ -23,7 +25,7 @@ class GameGrid(Frame):
                          c.KEY_H: logic.left, c.KEY_L: logic.right,
                          c.KEY_K: logic.up, c.KEY_J: logic.down}
 
-        self.intervalTime = 20 # (ms)
+        self.intervalTime = 1 # (ms)
         self.totalStep = 0
         self.uselessStep = 0
         
@@ -32,7 +34,7 @@ class GameGrid(Frame):
         self.init_matrix()
         self.update_grid_cells()
 
-        self.after(self.intervalTime, self.AI_GreedyAndRule)
+        self.after(self.intervalTime, self.AI_Expectimax)
         self.mainloop()
 
     class vitualKeyboardSignal:
@@ -102,7 +104,7 @@ class GameGrid(Frame):
                     del matrix2
                     return step
 
-    def AI_EvaluationGreedy(self): # randomly play
+    def AI_EvaluationGreedy(self):
 
         AIcommands = ['w', 'a', 's', 'd']
 
@@ -124,51 +126,23 @@ class GameGrid(Frame):
         if logic.game_state(self.matrix) == 'not over':
             self.after(self.intervalTime, self.AI_EvaluationGreedy)
 
-    def AI_GreedyAndRule(self): # randomly play
-
-        AIcommands = ['w', 'a', 's', 'd']
-        if logic.calcSpace(self.matrix) > 7:
-            AIRule = ['w', 'a', 'w', 'w', 'a']
-            a=self.vitualKeyboardSignal()
-            a.char = AIRule[self.totalStep % len(AIRule)]
-            self.totalStep += 1
-            if self.key_down(a):
-                self.uselessStep = 0
-            else:
-                self.uselessStep += 1
-            if self.uselessStep > 6:
-                a.char = 'd'
-                if self.key_down(a):
-                    self.uselessStep = 0
-                else:
-                    self.uselessStep += 1
-            if self.uselessStep > 20:
-                a.char = 's'
-                self.key_down(a)
-                self.uselessStep = 0
-        else:
-            maxstep = -1
-            nextStep = 'w'
-
-            for i in AIcommands:
-                tryTimes = 5
-                average = 0
-                for j in range(40):
-                    average += self.calcRandomExpection(self.matrix, i)
-                if i == 'w':
-                    average *= 1.2
-                elif i == 'a':
-                    average *= 1.1
-                if average > maxstep:
-                    nextStep = i
-                    maxstep = average
-
-            a=self.vitualKeyboardSignal()
-            a.char = nextStep
-            self.key_down(a)
-
+    def AI_Expection(self):
+        a=self.vitualKeyboardSignal()
+        tmp = self.matrix.copy()
+        a.char = AI.getNextMove(tmp)
+        self.key_down(a)
         if logic.game_state(self.matrix) == 'not over':
-            self.after(self.intervalTime, self.AI_GreedyAndRule)
+            self.after(self.intervalTime, self.AI_Expection)
+
+
+    def AI_Expectimax(self):
+        a=self.vitualKeyboardSignal()
+        tmp = self.matrix.copy()
+        AIBest = AI_best.AI()
+        a.char = AIBest.getNextMove(tmp)
+        self.key_down(a)
+        if logic.game_state(self.matrix) == 'not over':
+            self.after(self.intervalTime, self.AI_Expectimax)
 
     def init_grid(self):
         background = Frame(self, bg=c.BACKGROUND_COLOR_GAME,
@@ -214,9 +188,8 @@ class GameGrid(Frame):
         self.update_idletasks()
 
     def key_down(self, event):
-        print(event)
         key = repr(event.char)
-        print("key " + key)
+        arrowKey = {"w": "↑", "a": "←", "d": "→", "s": "↓"}
         if key == c.KEY_BACK and len(self.history_matrixs) > 1:
             self.matrix = self.history_matrixs.pop()
             self.update_grid_cells()
@@ -225,6 +198,8 @@ class GameGrid(Frame):
         elif key in self.commands:
             self.matrix, done = self.commands[repr(event.char)](self.matrix)
             if done:
+                print("key " + arrowKey[key[1]] + "  score " + str(logic.calcScore(self.matrix)))
+
                 self.matrix = logic.add_two(self.matrix)
                 # record last move
                 self.history_matrixs.append(self.matrix)
@@ -232,9 +207,9 @@ class GameGrid(Frame):
                 done = False
                 if logic.game_state(self.matrix) == 'win':
                     self.grid_cells[1][1].configure(
-                        text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
+                        text="You", bg=c.BACKGROUND_COLOR_CELL_WIN)
                     self.grid_cells[1][2].configure(
-                        text="Win!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
+                        text="Win!", bg=c.BACKGROUND_COLOR_CELL_WIN)
                 if logic.game_state(self.matrix) == 'lose':
                     self.grid_cells[1][1].configure(
                         text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
